@@ -437,7 +437,7 @@ if ($newcluster && -e '/etc/ssl/certs/ssl-cert-snakeoil.pem' &&
         symlink '/etc/ssl/private/ssl-cert-snakeoil.key', $datadir.'/server.key';
     }
 
-    PgCommon::set_conf_value $version, $cluster, 'postgresql.conf', 'ssl', 'true';
+    #PgCommon::set_conf_value $version, $cluster, 'postgresql.conf', 'ssl', 'true';
 }
 
 # create SSL client certificate root symlink if appropriate
