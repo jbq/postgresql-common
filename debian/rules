@@ -17,7 +17,7 @@ override_dh_install:
 	for p in $(POD8PROGS); do $(POD2MAN) --quotes=none --section 8 $$p > $$p.8 || exit 1; done
 
 override_dh_installinit:
-	dh_installinit --name=postgresql -u'defaults 19 21' -r
+	dh_installinit --name=postgresql -u'defaults 19 21' -r --no-start
 
 override_dh_gencontrol:
 	debian/supported-versions
