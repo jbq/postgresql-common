@@ -1,0 +1,104 @@
+# postgresql-common po-debconf translation to spanish
+# Copyright (C) 2006 Software in the Public Interest, SPI Inc.
+# This file is distributed under the same license as the postgresql-common
+# package.
+#
+# Changes:
+# - Initial translation
+#       Javier Fernández-Sanguino , 2006
+# - Updated
+#       Javier Fernández-Sanguino , 2007-2008
+#
+#
+#  Traductores, si no conoce el formato PO, merece la pena leer la 
+#  documentación de gettext, especialmente las secciones dedicadas a este
+#  formato, por ejemplo ejecutando:
+#         info -n '(gettext)PO Files'
+#         info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+# - El proyecto de traducción de Debian al español
+#   http://www.debian.org/intl/spanish/
+#   especialmente las notas y normas de traducción en
+#   http://www.debian.org/intl/spanish/notas
+#
+# - La guía de traducción de po's de debconf:
+#   /usr/share/doc/po-debconf/README-trans
+#   o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+# Si tiene dudas o consultas sobre esta traducción consulte con el último
+# traductor (campo Last-Translator) y ponga en copia a la lista de
+# traducción de Debian al español (<debian-l10n-spanish@lists.debian.org>)
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: postgresql-common 68\n"
+"Report-Msgid-Bugs-To: Source: postgresql-common@packages.debian.org\n"
+"POT-Creation-Date: 2008-02-03 13:01+0100\n"
+"PO-Revision-Date: 2008-03-30 15:44+0200\n"
+"Last-Translator: Javier Fernández-Sanguino <jfs@debian.org>\n"
+"Language-Team: Debian Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-15\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-POFile-SpellExtra: PostgreSQL oldversion clúster stop pgdropcluster\n"
+"X-POFile-SpellExtra: client old main clústers pgupgradecluster latest\n"
+"X-POFile-SpellExtra: postgresql\n"
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid "Obsolete major version ${old}"
+msgstr "Versión principal ${old} obsoleta"
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid ""
+"The PostgreSQL version ${old} is obsolete, but the server or client packages "
+"are still installed. Please install the latest packages (postgresql-"
+"${latest} and postgresql-client-${latest}) and upgrade the existing "
+"${oldversion} clusters with pg_upgradecluster (see manpage)."
+msgstr ""
+"La versión de PostgreSQL ${old} está obsoleta, pero el paquete del cliente o "
+"del servidor aún están instalados. Debe instalar las últimas versiones de "
+"los paquetes (postgresql-${latest} y postgresql-client-${latest}) y "
+"actualizar sus clústers ${oldversion} con la orden "
+"«pg_upgradecluster» (consulte la página del manual)."
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid ""
+"Please be aware that the installation of postgresql-${latest} will "
+"automatically create a default cluster ${latest}/main. If you want to "
+"upgrade the ${old}/main cluster, you need to remove the already existing "
+"${latest} cluster (pg_dropcluster --stop ${latest} main, see manpage for "
+"details)."
+msgstr ""
+"Tenga en cuenta que la instalación de postgresql-${latest} creará "
+"automáticamente un clúster por omisión ${latest}/main. Tiene que borrar el "
+"clúster ${latest} existente («pg_dropcluster --stop ${latest}) si desea "
+"actualizar el clúster ${old}/main, consulte la página de manual para conocer "
+"los detalles."
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid ""
+"The old server and client packages are no longer supported. After the "
+"existing clusters are upgraded, the postgresql-${old} and postgresql-client-"
+"${old} packages should be removed."
+msgstr ""
+"Ya no se da soporte a los paquetes antiguos de cliente y servidor. Debería "
+"eliminar los paquetes postgresql-${old} y postgresql-client-${old} después "
+"de actualizar los clústers que tenga."
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid ""
+"Please see /usr/share/doc/postgresql-common/README.Debian.gz for details."
+msgstr "Para más información consulte «/usr/share/doc/postgresql-common/README.Debian.gz»."

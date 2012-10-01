@@ -1,0 +1,138 @@
+Source: postgresql-common
+Section: database
+Priority: optional
+Maintainer: Debian PostgreSQL Maintainers <pkg-postgresql-public@lists.alioth.debian.org>
+Uploaders: Martin Pitt <mpitt@debian.org>, Christoph Berg <myon@debian.org>, Peter Eisentraut <petere@debian.org>
+Standards-Version: 3.9.3
+Vcs-Bzr: http://bzr.debian.org/bzr/pkg-postgresql/postgresql-common/trunk/
+Vcs-Browser: http://anonscm.debian.org/loggerhead/pkg-postgresql/postgresql-common/trunk
+Build-Depends: debhelper (>= 7.0.50~),
+ lsb-release
+XS-Testsuite: autopkgtest
+
+Package: postgresql-common
+Architecture: all
+Conflicts: postgresql-7.4, postgresql-8.0
+Depends: postgresql-client-common (>= ${source:Version}), 
+ procps, 
+ adduser,
+ debconf (>= 0.5.00) | debconf-2.0,
+ lsb-base (>= 3.0-3),
+ ssl-cert (>= 1.0.11),
+ logrotate ${logrotate:version},
+ ${misc:Depends}
+Breaks: postgresql-9.1 (<< 9.1.1-3~),
+ ${common-breaks}
+Description: PostgreSQL database-cluster manager
+ The postgresql-common package provides a structure under which
+ multiple versions of PostgreSQL may be installed and/or multiple
+ clusters maintained at one time.
+ .
+ This package will automatically create a (self-signed) certificate so
+ that SSL connections are supported.
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system. It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects. Its features include ACID
+ transactions, foreign keys, views, sequences, subqueries, triggers,
+ outer joins, multiversion concurrency control, and user-defined types
+ and functions.
+
+Package: postgresql-client-common
+Architecture: all
+Depends: ${misc:Depends}
+Recommends: lsb-release, libreadline6
+Description: manager for multiple PostgreSQL client versions
+ The postgresql-client-common package provides a structure under which
+ multiple versions of PostgreSQL client programs may be installed at
+ the same time. It provides a wrapper which selects the right version
+ for the particular cluster you want to access (with a command line
+ option, an environment variable, /etc/postgresql-common/user_clusters,
+ or ~/.postgresqlrc).
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system. It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects. Its features include ACID
+ transactions, foreign keys, views, sequences, subqueries, triggers,
+ outer joins, multiversion concurrency control, and user-defined types
+ and functions.
+
+Package: postgresql-server-dev-all
+Architecture: all
+Depends: ${misc:Depends}, 
+ postgresql-common (>= 117~),
+ lsb-release,
+ dctrl-tools,
+ ${server-dev-all-depends}
+Description: extension build tool for multiple PostgreSQL versions
+ The postgresql-server-dev-all package provides the pg_buildext script for
+ simplifying packaging of a PostgreSQL extension supporting multiple major
+ versions of the product.
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system. It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects. Its features include ACID
+ transactions, foreign keys, views, sequences, subqueries, triggers,
+ outer joins, multiversion concurrency control, and user-defined types
+ and functions.
+
+Package: postgresql
+Architecture: all
+Depends: postgresql-${default-version}, ${misc:Depends}
+Description: object-relational SQL database (supported version)
+ This metapackage always depends on the currently supported PostgreSQL
+ database server version.
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system.  It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects.  Some of the features are:
+ ACID transactions, foreign keys, views, sequences, subqueries,
+ triggers, user-defined types and functions, outer joins, multiversion
+ concurrency control.  Graphical user interfaces and bindings for many
+ programming languages are available as well.
+
+Package: postgresql-client
+Architecture: all
+Depends: postgresql-client-${default-version}, ${misc:Depends}
+Description: front-end programs for PostgreSQL (supported version)
+ This metapackage always depends on the currently supported database
+ client package for PostgreSQL.
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system.  It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects.  Some of the features are:
+ ACID transactions, foreign keys, views, sequences, subqueries,
+ triggers, user-defined types and functions, outer joins, multiversion
+ concurrency control.  Graphical user interfaces and bindings for many
+ programming languages are available as well.
+
+Package: postgresql-doc
+Architecture: all
+Section: doc
+Depends: postgresql-doc-${default-version}, ${misc:Depends}
+Description: documentation for the PostgreSQL database management system
+ This metapackage always depends on the currently supported PostgreSQL
+ database documentation package.
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system.  It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects.  Some of the features are:
+ ACID transactions, foreign keys, views, sequences, subqueries,
+ triggers, user-defined types and functions, outer joins, multiversion
+ concurrency control.  Graphical user interfaces and bindings for many
+ programming languages are available as well.
+
+Package: postgresql-contrib
+Architecture: all
+Depends: postgresql-contrib-${default-version}, ${misc:Depends}
+Description: additional facilities for PostgreSQL (supported version)
+ This metapackage always depends on the currently supported PostgreSQL
+ database contrib package.
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system.  It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects.  Some of the features are:
+ ACID transactions, foreign keys, views, sequences, subqueries,
+ triggers, user-defined types and functions, outer joins, multiversion
+ concurrency control.  Graphical user interfaces and bindings for many
+ programming languages are available as well.

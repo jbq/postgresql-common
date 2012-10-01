@@ -1,0 +1,88 @@
+# This file contains common functionality for all postgresql server
+# package maintainer scripts.
+
+# arguments: version master package [package]
+_link_manpages() {
+    MANS=$(unset GREP_OPTIONS; dpkg -L $3 $4 $5 2>/dev/null|egrep '/man/.*\.[1-9](\.gz)?$' | grep -v "$2") || true
+    [ -n "$MANS" ] || return 0
+
+    SLAVES=$(for i in $MANS; do TARGET=$(echo $i | sed "s/postgresql\/$1\///"); echo -n " --slave $TARGET $(basename $i) $i"; done)
+    update-alternatives --install /usr/share/man/man1/$2 \
+	$2 /usr/share/postgresql/$1/man/man1/$2 \
+	$(echo "$1" | tr -cd 0-9) $SLAVES
+}
+
+# arguments: version master
+_unlink_manpages() {
+    update-alternatives --remove $2 /usr/share/postgresql/$1/man/man1/$2
+}
+
+_remove_tsearch() {
+   if [ -e /usr/share/postgresql/$1/tsearch_data ]; then
+       find /usr/share/postgresql/$1/tsearch_data -type l \( -name '*.dict' -o -name '*.affix' \) -exec rm '{}' \;
+   fi
+}
+
+# arguments: <major version> <most recently configured package version>
+configure_version() {
+    VERSION="$1"
+
+    # Create a main cluster for given version ($1) if no cluster already exists
+    # for that version and we are installing from scratch.
+    [ "$VERSION" ] || { echo "Error: configure_version: need version parameter" >&2; exit 1; }
+    if [ ! -d "/etc/postgresql/$VERSION" ] || [ -z "$(ls /etc/postgresql/$VERSION)" ] || \
+       [ -z "$(ls /etc/postgresql/$VERSION/*/postgresql.conf 2>/dev/null)" ]; then
+        [ "$2" ] || /usr/bin/pg_createcluster -u postgres $VERSION main || {
+	echo "Error: could not create default cluster. Please create it manually with
+
+  pg_createcluster $VERSION main --start
+
+or a similar command (see 'man pg_createcluster')." >&2
+	}
+    fi
+
+    _link_manpages "$VERSION" postmaster.1.gz "postgresql-$1" "postgresql-contrib-$1"
+
+    if [ -x /etc/init.d/postgresql ] && [ ! -x /etc/init.d/postgresql-$VERSION ]; then
+       if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+                invoke-rc.d postgresql start $VERSION || exit $?
+        else
+                /etc/init.d/postgresql start $VERSION || exit $?
+        fi
+
+    fi
+}
+
+stop_version() {
+    if [ -x /etc/init.d/postgresql ] && [ ! -x /etc/init.d/postgresql-$1 ]; then
+       if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+                invoke-rc.d postgresql stop $1 || exit $?
+        else
+                /etc/init.d/postgresql stop $1 || exit $?
+        fi
+
+    fi
+}
+
+remove_version() {
+    _unlink_manpages "$1" postmaster.1.gz
+    _remove_tsearch "$1"
+}
+
+configure_client_version() {
+    _link_manpages "$1" "postgresql-client-$1" psql.1.gz
+}
+
+remove_client_version() {
+    _unlink_manpages "$1" psql.1.gz
+}
+
+configure_contrib_version() {
+    _link_manpages "$1" postmaster.1.gz "postgresql-$1" "postgresql-contrib-$1"
+}
+
+remove_contrib_version() {
+    # we still want to retain the alternatives for the server packages
+    _link_manpages "$1" postmaster.1.gz "postgresql-$1"
+}
+

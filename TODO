@@ -1,0 +1,39 @@
+postgresql TODO
+===============
+
+Bugs:
+- pg_createcluster with existing cluster: respect symlinks to shared
+  postgresql.conf files, never remove symlinks in already existing
+  cluster dirs
+- Clean up at purging if /etc/ is there without /var, or vice versa
+
+Transition bugs:
+
+Missing selftest:
+- --force option for pg_ctlcluster
+
+Important features:
+
+Wishlist:
+- Add pg_conf to change startup and possibly other things
+- add program for web applications, which configure pg_hba.conf:
+
+  pg_hba add|remove|test [options] yourwebappdb yourwebappuser
+
+  Options:
+
+  --cluster: self-explanatory, defaults to default cluster
+  --ip: IP and netmask for host socket; if not given, defaults to Unix
+    socket (local)
+  --method: defaults to "md5" for TCP connections, and "ident sameuser" for
+    Unix socket connections
+  --force-ssl: If given, create a "hostssl" entry, otherwise a "host"
+    entry
+
+  For remove, only --cluster is allowed; it will remove all hba
+  entries that refer to the given db/user pair. test checks whether the
+  given connection is allowed; if so, it exits with 0, otherwise it prints the
+  required pg_hba.conf line to stdout and exits with 1. If pg_hba.conf has a
+  scrambled format that cannot be parsed by pg_*_hba, the scripts exit with 2.
+
+  Add libnet-cidr-perl dependency!

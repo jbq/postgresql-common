@@ -1,0 +1,1 @@
+postgresql-common: binary-without-manpage usr/bin/pg_config

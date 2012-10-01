@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+# install locales; this happens differently on Debian and Ubuntu
+if [ -e /etc/locale.gen ]; then
+    /bin/echo -e 'ru_RU ISO-8859-5\nru_RU.UTF-8 UTF-8' >> /etc/locale.gen
+    locale-gen
+else
+    locale-gen ru_RU ru_RU.UTF-8
+fi
+
+# ensure that en_US.utf8 exists
+if [ -n "`LANG=en_US.utf8 locale 2>&1 1>/dev/null`" ]; then
+    echo "en_US.utf8 locale does not exist, aborting" >&2
+    exit 1
+fi
+
+cd /usr/share/postgresql-common
+env -u TMPDIR LANG=en_US.utf8 ./testsuite

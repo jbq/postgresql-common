@@ -1,0 +1,81 @@
+#!/bin/sh
+
+# print a list of PostgreSQL versions that are supported for the platform this
+# script runs on.
+# Note: Newer installed versions than the highest one listed here are always
+# considered supported, so that backports will not cause an "obsolete" warning.
+#
+# (C) 2005 Martin Pitt <mpitt@debian.org>
+
+set -e
+
+DEFAULT="9.1"
+
+lsb_ubuntu() {
+    case "$1" in
+        8.04 | 8.10 | 9.04)
+            /bin/echo -e "8.3\n8.4"
+            ;;
+	9.10|10.04|10.10|11.04)
+            /bin/echo -e "8.4"
+            ;;
+	11.10|12.04|12.10)
+            /bin/echo -e "9.1"
+            ;;
+        *)
+            echo "supported_versions: WARNING: Unknown Ubuntu release: $1" >&2
+            /bin/echo -e "$DEFAULT"
+            ;;
+    esac
+} 
+
+lsb_debian() {
+    case "$1" in
+        # Lenny
+        5.0*)
+            /bin/echo -e "8.3"
+            ;;
+        # Squeeze
+	6.0*)
+            /bin/echo -e "8.4"
+            ;;
+        # unstable
+        testing | unstable)
+            /bin/echo -e "9.1"
+            ;;
+        *)
+            echo "supported_versions: WARNING: Unknown Debian release: $1" >&2
+            /bin/echo -e "$DEFAULT"
+            ;;
+    esac
+} 
+
+# If we have lsb_release, use it
+if type lsb_release >/dev/null 2>/dev/null; then
+    DISTRO="`lsb_release -is`" || DISTRO=""
+    RELEASE="`lsb_release -rs`" || RELEASE=""
+fi
+    
+if [ -n "$DISTRO" -a -n "$RELEASE" ]; then
+    # Ubuntu?
+    case "$DISTRO" in
+        Ubuntu)
+            lsb_ubuntu "$RELEASE"
+            ;;
+
+        Debian)
+            lsb_debian "$RELEASE"
+            ;;
+
+        *)
+            echo "supported_versions: WARNING! Unknown distribution: $DISTRO" >&2
+            echo "Please submit this as a bug report to your distribution." >&2
+            /bin/echo -e "$DEFAULT"
+            ;;
+    esac
+else
+    echo "supported_versions: WARNING: lsb_release not present, unknown distribution" >&2
+    /bin/echo -e "$DEFAULT"
+fi
+
+exit 0

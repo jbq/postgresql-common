@@ -1,0 +1,115 @@
+#!/usr/bin/perl -w
+
+# Create dictionaries and affix rules palatable for PostgreSQL, using installed
+# myspell and hunspell dictionaries.
+#
+# (C) 2008-2009 Martin Pitt <mpitt@debian.org>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
+my @srcdirs = ('/usr/share/hunspell', '/usr/share/myspell/dicts');
+my $cachedir = '/var/cache/postgresql/dicts';
+my $pgsharedir = '/usr/share/postgresql/';
+
+use lib '/usr/share/postgresql-common';
+use PgCommon;
+
+# determine encoding of an .aff file
+sub get_encoding {
+    open F, $_[0] or die "cannot open $_[0]: $!";
+    while (<F>) {
+        if (/^SET ([\w-]+)\s*$/) { return $1; }
+    }
+    return undef;
+}
+
+if ((system 'mkdir', '-p', $cachedir) != 0) {
+    exit 1;
+}
+
+print "Building PostgreSQL dictionaries from installed myspell/hunspell packages...\n";
+my ($dic, $enc, $locale);
+for my $d (@srcdirs) {
+    for my $aff (glob "$d/*.aff") {
+	next if -l $aff; # ignore symlinks
+	$dic = substr($aff, 0, -3) . 'dic';
+	if (! -f $dic) {
+	    print STDERR "ERROR: $aff does not have corresponding $dic, ignoring\n";
+	    next;
+	}
+
+	$enc = get_encoding $aff;
+	if (!$enc) {
+	    print STDERR "ERROR: no ecoding defined in $aff, ignoring\n";
+	    next;
+	}
+
+	$locale = substr ((split '/', $aff)[-1], 0, -4);
+	$locale =~ tr /A-Z/a-z/;
+
+	# convert to UTF-8 and write to cache dir
+	print "  $locale\n";
+	if ((system 'iconv', '-f', $enc, '-t', 'UTF-8', '-o',
+	    "$cachedir/$locale.affix", $aff) != 0) {
+	    unlink "$cachedir/$locale.affix";
+	    print STDERR "ERROR: Conversion of $aff failed\n";
+	    next;
+	}
+	if ((system 'iconv', '-f', $enc, '-t', 'UTF-8', '-o',
+	    "$cachedir/$locale.dict", $dic) != 0) {
+	    unlink "$cachedir/$locale.affix";
+	    unlink "$cachedir/$locale.dict";
+	    print STDERR "ERROR: Conversion of $dic failed\n";
+	    next;
+	}
+	chmod 0644, "$cachedir/$locale.affix", "$cachedir/$locale.dict";
+
+	# install symlinks to all versions >= 8.3
+	foreach my $v (get_versions) {
+	    next if $v lt '8.3';
+	    my $dest = "$pgsharedir/$v/tsearch_data/";
+	    next if ! -d $dest;
+	    next if -e "$dest/$locale.affix" && ! -l "$dest/$locale.affix";
+	    next if -e "$dest/$locale.dict" && ! -l "$dest/$locale.dict";
+	    unlink "$dest/$locale.affix";
+	    unlink "$dest/$locale.dict";
+	    symlink "$cachedir/$locale.affix", "$dest/$locale.affix";
+	    symlink "$cachedir/$locale.dict", "$dest/$locale.dict";
+	}
+    }
+}
+
+__END__
+
+=head1 NAME
+
+pg_updatedicts - build PostgreSQL dictionaries from myspell/hunspell ones
+
+=head1 SYNOPSIS
+
+B<pg_updatedicts>
+
+=head1 DESCRIPTION
+
+B<pg_updatedicts> makes dictionaries and affix files from installed myspell
+and hunspell dictionary packages available to PostgreSQL for usage with tsearch
+and word stem support. In particular, it takes all I<*.dic> and I<*.aff> files
+from /usr/share/myspell/dicts/, converts them to UTF-8, puts them into
+/var/cache/postgresql/dicts/ with I<*.dict> and I<*.affix> suffixes, and
+symlinks them into /usr/share/postgresql/I<version>/tsearch_data/, where
+PostgreSQL looks for them.
+
+Through postgresql-common's dpkg trigger, this program is automatically run
+whenever a myspell or hunspell dictionary package is installed or upgraded.
+
+=head1 AUTHOR
+
+Martin Pitt L<E<lt>mpitt@debian.orgE<gt>>

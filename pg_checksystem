@@ -1,0 +1,60 @@
+#!/usr/bin/perl -wT
+
+# Check various system parameters for PostgreSQL. This needs to be run as root.
+#
+# (C) 2005-2009 Martin Pitt <mpitt@debian.org>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
+use strict;
+
+use lib '/usr/share/postgresql-common';
+use PgCommon;
+
+# Check write cache setting for given drive.
+# Arguments: <device>
+# Returns: 0 = disabled, 1 = enabled, -1: could not determine
+sub get_device_write_cache {
+    open DRV, $_[0] or return -1;
+    sub HDIO_GET_WCACHE () {0x30e;}
+    my $pval = pack 'l', 0;
+    ioctl DRV, &HDIO_GET_WCACHE, $pval or return -1;
+    my ($val) = unpack 'l', $pval;
+    close DRV;
+    return $val;
+}
+
+
+error 'This command needs to be executed as root' if $> != 0;
+
+# collect write cache-enabled drives with databases
+my %drive_wcache;
+my %seen;
+for my $v (get_versions) {
+    for my $c (get_version_clusters $v) {
+	my $datadir = PgCommon::cluster_data_directory $v, $c;
+	my $drv = PgCommon::get_file_device $datadir;
+	$drv =~ s/[0-9]+$//;
+	unless (exists $seen{$drv}) {
+	    $drive_wcache{$drv} = 1 if (get_device_write_cache $drv) > 0;
+	    $seen{$drv} = 1;
+	}
+    }
+}
+my @unsave_drives = keys %drive_wcache;
+
+if (@unsave_drives) {
+    print 'Warning: The following devices contain databases and have write
+caching enabled: ', (join ' ', @unsave_drives), '
+This could destroy the integrity of your databases in the event of power
+failure. Consider disabling the write cache with "hdparm -W 0 <device>".
+';
+}

@@ -1,0 +1,126 @@
+#!/usr/bin/perl -wT
+
+# Completely delete a PostgreSQL cluster. Fails if there is still a server
+# process attached.
+#
+# (C) 2005-2009 Martin Pitt <mpitt@debian.org>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
+use lib '/usr/share/postgresql-common';
+use Getopt::Long;
+use PgCommon;
+
+# untaint environment
+$ENV{'PATH'} = '/bin:/usr/bin';
+delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+
+$stopserver = 0;
+exit 1 unless GetOptions ('stop-server' => \$stopserver, 'stop' => \$stopserver);
+
+# command line options
+if ($#ARGV != 1) {
+    print "Usage: $0 [--stop] <version> <cluster>\n";
+    exit 1;
+}
+
+($version) = $ARGV[0] =~ /^(\d+\.\d+)$/;
+($cluster) = $ARGV[1] =~ /^([-.\w]+)$/;
+error 'invalid version' unless defined $version;
+error 'invalid cluster name' unless defined $cluster;
+
+my %info;
+my $c; # configuration directory
+
+if (cluster_exists $version, $cluster) {
+    %info = cluster_info ($version, $cluster);
+    if ($info{'running'}) {
+	if ($stopserver) {
+	    if ($info{'pgdata'} && -d $info{'pgdata'}) {
+		if (system ('pg_ctlcluster', $version, $cluster, 'stop')) {
+		    error 'could not stop server, aborting';
+		}
+	    } else {
+		print STDERR "warning: corrupted cluster: data directory does not exist any more, but server is still running; you have to manually kill the postmaster process\n";
+	    }
+	} else {
+	    error 'This cluster is still running. Stop it or supply the --stop option';
+	}
+    }
+    $c = $info{'configdir'};
+} else {
+    $c = "/etc/postgresql/$version/$cluster";
+
+    # check if we have a broken cluster, clean up if necessary
+    -d $c or error 'specified cluster does not exist';
+}
+
+if ($info{'pgdata'} && -d $info{'pgdata'}) {
+    $result = system '/bin/rm', '-r', $info{'pgdata'}; 
+    if ($result) {
+        if (! -w ($info{'pgdata'} . '/..')) {
+            error 'you might need to run this program with root privileges';
+        }
+        exit $result;
+    }
+} else {
+    print STDERR "warning: corrupted cluster: data directory does not exist\n";
+}
+unlink $c.'/pg_hba.conf', $c.'/pg_ident.conf', $c.'/postgresql.conf',
+    $c.'/start.conf', $c.'/log', $c.'/autovacuum_log', $c.'/pgdata',
+    $c.'/environment', $c.'/pg_ctl.conf';
+unlink $info{'logfile'} if defined ($info{'logfile'});
+if ($info{'socketdir'} !~ /^(\/tmp|\/var\/run\/postgresql)\/?$/) {
+    rmdir $info{'socketdir'};
+}
+rmdir $c;
+rmdir "/etc/postgresql/$version";
+rmdir "/var/lib/postgresql/$version/$cluster";
+rmdir "/var/lib/postgresql/$version";
+unlink "/var/log/postgresql/postgresql-$version-$cluster.log";
+# remove logrotated files
+foreach my $f (</var/log/postgresql/postgresql-$version-$cluster.log.[1-9]*>) {
+    unlink ($f =~ /(.*)/); # untaint
+}
+exit 0;
+
+__END__
+
+=head1 NAME
+
+pg_dropcluster - completely delete a PostgreSQL cluster
+
+=head1 SYNOPSIS
+
+B<pg_dropcluster> [B<--stop>] I<cluster-version> I<cluster-name>
+
+=head1 DESCRIPTION
+
+This program removes all files that belong to a given PostgreSQL cluster; that
+includes the data directory, the log file, and all configuration files that
+were created by L<pg_createcluster(1)>. If the configuration directory
+(C</etc/postgresql/>I<version>C</>I<cluster>) is empty after this, it is
+removed as well.
+An empty socket directory other than B</var/run/postgresql> or B</tmp> is
+also removed.
+
+Usually a cluster which still has a running server attached will not be
+deleted. To override this, the B<--stop> option forces a server shutdown
+before the files are removed.
+
+=head1 SEE ALSO
+
+L<pg_createcluster(1)>, L<pg_ctlcluster(1)>
+
+=head1 AUTHOR
+
+Martin Pitt L<E<lt>mpitt@debian.orgE<gt>>
+

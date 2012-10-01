@@ -1,0 +1,71 @@
+# Czech translation of postgresql-common debconf messages.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the postgresql-common package.
+# Miroslav Kure <kurem@debian.cz>, 2006-2009.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: postgresql-common\n"
+"Report-Msgid-Bugs-To: Source: postgresql-common@packages.debian.org\n"
+"POT-Creation-Date: 2008-02-03 13:01+0100\n"
+"PO-Revision-Date: 2009-06-27 10:34+0200\n"
+"Last-Translator: Miroslav Kure <kurem@debian.cz>\n"
+"Language-Team: Czech <debian-l10n-czech@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid "Obsolete major version ${old}"
+msgstr "Zastaralá hlavní verze ${old}"
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid ""
+"The PostgreSQL version ${old} is obsolete, but the server or client packages "
+"are still installed. Please install the latest packages (postgresql-"
+"${latest} and postgresql-client-${latest}) and upgrade the existing "
+"${oldversion} clusters with pg_upgradecluster (see manpage)."
+msgstr ""
+"PostgreSQL verze ${old} je již zastaralá, ale v systému se stále nachází "
+"balík se serverem a/nebo klientem. Nainstalujte prosím nejnovější balíky "
+"(postgresql-${latest} a postgresql-client-${latest}) a aktualizujte své "
+"klastry ${oldversion} pomocí pg_upgradecluster (viz manuálová stránka)."
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid ""
+"Please be aware that the installation of postgresql-${latest} will "
+"automatically create a default cluster ${latest}/main. If you want to "
+"upgrade the ${old}/main cluster, you need to remove the already existing "
+"${latest} cluster (pg_dropcluster --stop ${latest} main, see manpage for "
+"details)."
+msgstr ""
+"Vemte prosím na vědomí, že instalací postgresql-${latest} se automaticky "
+"vytvoří výchozí klastr ${latest}/main. Chcete-li aktualizovat klastr ${old}/"
+"main, musíte odstranit nově vytvořený klastr ${latest} (pg_dropcluster --"
+"stop ${latest} main, viz manuálová stránka)."
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid ""
+"The old server and client packages are no longer supported. After the "
+"existing clusters are upgraded, the postgresql-${old} and postgresql-client-"
+"${old} packages should be removed."
+msgstr ""
+"Staré balíky serveru a klienta již nejsou podporovány. Po aktualizaci "
+"stávajících klastrů byste měli balíky postgresql-${old} a postgresql-client-"
+"${old} odstranit."
+
+#. Type: error
+#. Description
+#: ../postgresql-common.templates:2001
+msgid ""
+"Please see /usr/share/doc/postgresql-common/README.Debian.gz for details."
+msgstr ""
+"Podrobnosti naleznete v /usr/share/doc/postgresql-common/README.Debian.gz."

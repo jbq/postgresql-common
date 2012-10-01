@@ -1,0 +1,87 @@
+#!/bin/sh
+
+set -e
+. /usr/share/debconf/confmodule
+db_stop
+
+SSL_ROOT=/etc/postgresql-common/root.crt
+
+if [ "$1" = configure ]; then
+    # Make sure the administrative user exists
+    if ! getent passwd postgres > /dev/null; then
+        adduser --system --quiet --home /var/lib/postgresql --no-create-home \
+            --shell /bin/bash --group --gecos "PostgreSQL administrator" postgres
+    fi
+
+    # check validity of postgres user and group
+    if [ "`id -u postgres`" -eq 0 ]; then
+        echo "The postgres system user must not have uid 0 (root).
+Please fix this and reinstall this package." >&2
+        exit 1
+    fi
+    if [ "`id -g postgres`" -eq 0 ]; then
+        echo "The postgres system user must not have root as primary group.
+Please fix this and reinstall this package." >&2
+        exit 1
+    fi
+
+    # ensure home directory ownership
+    mkdir -p /var/lib/postgresql
+    chown postgres:postgres /var/lib/postgresql
+
+    # nicer log directory permissions
+    mkdir -p /var/log/postgresql
+    chmod 1775 /var/log/postgresql
+    chown root:postgres /var/log/postgresql
+
+    # create socket directory
+    [ -d /var/run/postgresql ] || \
+       install -d -m 2775 -o postgres -g postgres /var/run/postgresql
+
+    # create default dummy root.crt if not present
+    if ! [ -e "$SSL_ROOT" ]; then
+        cat > "$SSL_ROOT" <<EOF
+This is a dummy root certificate file for PostgreSQL. To enable client side
+authentication, add some certificates to it. Client certificates must be signed
+with any certificate in this file to be accepted. 
+
+A reasonable choice is to just symlink this file to
+/etc/ssl/certs/ssl-cert-snakeoil.pem; in this case, client certificates need to
+be signed by the postgresql server certificate, which might be desirable in
+many cases. See
+
+  file:///usr/share/doc/postgresql-doc-8.3/html/ssl-tcp.html
+
+for details (in package postgresql-doc-8.3).
+EOF
+    fi
+
+    # Add postgres user to the ssl-cert group on fresh installs
+    if [ -z "$2" ]; then
+	if getent group ssl-cert >/dev/null; then
+	    adduser --quiet postgres ssl-cert
+	fi
+    fi
+
+    # clean /usr/share/postgresql/*/tsearch_data/system_* stuff
+    if dpkg --compare-versions "$2" lt-nl 105; then
+	find /usr/share/postgresql/*/tsearch_data -type l \( -name 'system_*.dict' -o -name 'system_*.affix' \) -exec rm '{}' \; && pg_updatedicts || true
+    fi
+
+    if [ "$2" ]; then
+        /usr/share/postgresql-common/run-upgrade-scripts "$2" || true
+    fi
+
+    /usr/share/postgresql-common/pg_checksystem || true
+
+    if dpkg --compare-versions "$2" lt 94; then
+        pg_updatedicts || true
+    fi
+fi
+
+if [ "$1" = triggered ]; then
+    pg_updatedicts || true
+fi
+
+#DEBHELPER#
+

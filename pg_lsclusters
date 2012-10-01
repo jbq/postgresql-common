@@ -1,0 +1,71 @@
+#!/usr/bin/perl -wT
+# Show all PostgreSQL clusters in a list
+#
+# (C) 2005-2009 Martin Pitt <mpitt@debian.org>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
+use lib '/usr/share/postgresql-common';
+use PgCommon;
+use Getopt::Long;
+
+exit 1 unless GetOptions ('h|no-header' => \$no_header);
+
+@columns = ('Version', 'Cluster', 'Port', 'Status', 'Owner', 'Data directory',
+            'Log file');
+@colwidths = qw/7 9 4 6 8 34 1/;
+
+foreach $cw (@colwidths) {
+    $fmtstring .= ' ' if $fmtstring;
+    $fmtstring .= '%-'.$cw.'s';
+}
+$fmtstring .= "\n";
+
+printf $fmtstring, @columns unless $no_header;
+
+foreach $v (sort (get_versions())) {
+    my @clusters = get_version_clusters $v;
+    foreach $c (sort @clusters) {
+        %info = cluster_info $v, $c;
+        printf $fmtstring, ($v, $c, $info{'port'}, 
+            ($info{'running'} ? "online" : "down") . ($info{'recovery'} ? ",recovery" : ""),
+            defined $info{'owneruid'} ? (getpwuid $info{'owneruid'})[0] : '<unknown>', 
+	    $info{'pgdata'} || '<not set>', $info{'logfile'} || 'custom');
+    }
+}
+
+__END__
+
+=head1 NAME
+
+pg_lsclusters - show information about all PostgreSQL clusters
+
+=head1 SYNOPSIS
+
+B<pg_lsclusters> [I<options>]
+
+=head1 DESCRIPTION
+
+This command shows a list about the configuration and status of all clusters.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-h>, B<--no-header>
+
+Do not print the column header line.
+
+=back
+
+=head1 AUTHOR
+
+Martin Pitt L<E<lt>mpitt@debian.orgE<gt>>

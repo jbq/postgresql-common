@@ -1,0 +1,108 @@
+#!/bin/sh -e
+
+# Run integration tests (on the installed package).
+#
+# (C) 2005-2009 Martin Pitt <mpitt@debian.org>
+# (C) 2012 Christoph Berg <myon@debian.org>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
+# default config
+TESTSDIR="$(dirname $0)/t"
+UMASKS="022 077"
+
+help ()
+{
+    echo "postgresql-common testsuite"
+    echo "Syntax: $0 [options] [test ...]"
+    echo "    -u 'umask ...'  list of umasks to run testsuite with [default: 022 077]"
+    exit ${1:-0}
+}
+
+# option parsing
+while getopts "hu:" opt ; do
+    case $opt in
+        h) help ;;
+        u) UMASKS="$OPTARG" ;;
+        *) help 1 ;;
+    esac
+done
+# shift away args
+shift $(($OPTIND - 1))
+
+if [ "$(id -u)" != 0 ]; then
+    echo "Error: this test suite needs to be run as root" >&2
+    exit 1
+fi
+
+# always clean up behind us
+trap '
+if [ -d /etc/postgresql.testsuite ]; then 
+    rm -rf /etc/postgresql; 
+    mv /etc/postgresql.testsuite /etc/postgresql;
+fi;
+if [ -d /var/lib/postgresql.testsuite ]; then 
+    rm -rf /var/lib/postgresql;
+    mv /var/lib/postgresql.testsuite /var/lib/postgresql;
+fi;
+if [ -d /var/log/postgresql.testsuite ]; then 
+    rm -rf /var/log/postgresql;
+    mv /var/log/postgresql.testsuite /var/log/postgresql;
+fi' 0 1 2 3 5 7 10 13 15
+
+# temporarily move away existing clusters
+for v in $(ls /usr/lib/postgresql/); do
+    if [ -x "/etc/init.d/postgresql-$v" ]; then
+        /etc/init.d/postgresql-$v stop
+    fi
+done
+if [ -x "/etc/init.d/postgresql" ]; then
+    /etc/init.d/postgresql stop
+fi
+
+if [ -d /etc/postgresql ]; then 
+    mv /etc/postgresql /etc/postgresql.testsuite;
+fi
+if [ -d /var/lib/postgresql ]; then 
+    mv /var/lib/postgresql /var/lib/postgresql.testsuite;
+fi
+if [ -d /var/log/postgresql ]; then 
+    mv /var/log/postgresql /var/log/postgresql.testsuite;
+    install -d -m 1775 -o root -g postgres /var/log/postgresql
+fi
+
+# reset core limit for pg_ctl tests
+ulimit -S -c 0
+
+# set variables which cause taint check errors
+export IFS=' '
+export CDPATH=/usr
+export ENV=/nonexisting
+export BASH_ENV=/nonexisting
+
+if [ $# -eq 0 ]; then
+    set -- $TESTSDIR/*.t
+fi
+
+for U in $UMASKS; do
+    case $U in
+        022) TYPE="default" ;;
+        077) TYPE="tight" ;;
+        *) TYPE="custom" ;;
+    esac
+
+    echo "====== Running all tests with $TYPE umask $U ======="
+    umask $U
+    for T; do
+        echo "=== Running test `basename $T`... ==="
+        perl $T
+    done
+done
