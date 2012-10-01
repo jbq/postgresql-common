@@ -1,3 +1,10 @@
+postgresql-common (136ubuntu1) stable; urgency=low
+
+  * Apply Nomao improvements
+  * Add --no-start to PG init
+
+ -- Jean-Baptiste Quenot <jbq@grado.jfg-networks.net>  Mon, 01 Oct 2012 11:47:55 +0200
+
 postgresql-common (136) experimental; urgency=low
 
   [ Martin Pitt ]
